@@ -12,6 +12,7 @@
       margin: 0;
       background: linear-gradient(to right, #dfe9f3, #ffffff);
       overflow-x: hidden;
+      overscroll-behavior: none;
     }
     .overlay {
       position: fixed;
@@ -230,7 +231,9 @@
         margin-top: 20px;
       }
     }
-      
+    #onboardGender option[value=""] {
+      color: #aaa; /* Light gray for the placeholder */
+    }
   </style>
   
 </head>
@@ -245,12 +248,13 @@
 <body>
   <div class="overlay" id="overlay">
     <div class="onboarding">
-      <h2>Swap your Face using AI!</h2>
+      <h2 style="color:#444;">Experience a Vintage Era!</h2>
+      <h3 style="color:#444;">Swap your Face onto retro product photos using AI!</h3>
       <form id="onboardForm" onsubmit="startApp(); return false;">
         <input type="text" id="onboardName" placeholder="Enter your name" required>
         <input type="email" id="onboardEmail" placeholder="Enter your email" required>
         <select id="onboardGender" required>
-          <option value="">Select Gender</option>
+          <option value="" disabled selected hidden>Select Gender</option>
           <option value="Male">Male</option>
           <option value="Female">Female</option>
         </select>
@@ -262,6 +266,7 @@
 
   <div class="container" id="mainContainer">
     <h1 style="text-align:center; color:#444;">Face Swap Tool</h1>
+    <h3 style="text-align:center; color:#444;">Step One: Upload or Take a Photo with your Face Visible</h3>
 
     <form id="face-swap-form" method="POST" enctype="multipart/form-data">
       <input type="hidden" id="name" name="name">
@@ -282,6 +287,7 @@
 
       <canvas id="canvas" style="display:none;"></canvas>
       <input type="file" id="selfieFile" name="selfie_file" style="display:none;">
+      <h3 style="text-align:center; color:#444;">Step Two: Select a Photo to Swap Your Face Onto!</h3>
 
       <div class="target-images" id="imageSelector"></div>
 
@@ -421,4 +427,3 @@
 
   </script>
 </body>
-</html>
