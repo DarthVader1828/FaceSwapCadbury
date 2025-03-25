@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Swap Tool</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: linear-gradient(to right, #dfe9f3, #ffffff);
+      overflow-x: hidden;
+    }
+    .overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+    .overlay.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .onboarding {
+      background: #fff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      transform: scale(1);
+      animation: scaleIn 0.5s ease forwards;
+    }
+    @keyframes scaleIn {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .onboarding input, .onboarding select {
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+  
+    .onboarding button {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      background-size: 200% auto;
+      background-position: left center;
+      color: #fff;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-position 0.5s ease, transform 0.3s ease;
+    }
+    .onboarding button:hover {
+      background-position: right center;
+      transform: scale(1.04);
+    }
+  
+    .btn {
+      background-color: #007bff;
+      min-height: 48px;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  
+    /* Special styling for Generate button only */
+    #generate-btn-container .btn {
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      background-size: 200% auto;
+      background-position: left center;
+      transition: background-position 0.5s ease, transform 0.3s ease;
+    }
+  
+    #generate-btn-container .btn:hover {
+      background-position: right center;
+      transform: scale(1.04);
+    }
+  
+    .container {
+      max-width: 900px;
+      margin: 60px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.1);
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 1.2s ease;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .container.show {
+      visibility: visible;
+      pointer-events: auto;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .button-container, .target-images {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .target-images {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+    .target-images img {
+      height: 220px;
+      width: auto;
+      max-width: 150px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      border: 2px solid transparent;
+    }
+    .target-images img:hover {
+      transform: scale(1.05);
+      border-color: #6a11cb;
+    }
+    .selected {
+      border-color: #28a745 !important;
+      transform: scale(1.08);
+    }
+    #generate-btn-container {
+      text-align: center;
+    }
+
+    #generateButton:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+        transform: none !important;
+        transition: none;
+        box-shadow: none;
+    }
+
+    #loadingOverlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        backdrop-filter: blur(8px);
+        background: rgba(255, 255, 255, 0.6);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+      
+    #loadingOverlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+      
+    .loading-spinner {
+        text-align: center;
+        font-size: 24px;
+        color: #444;
+    }
+      
+    .loading-spinner i {
+        font-size: 48px;
+        margin-bottom: 10px;
+        color: #6a11cb;
+    }
+
+    @media (max-width: 600px) {
+      .onboarding {
+        padding: 25px 15px;
+      }
+      
+      .target-images {
+        gap: 10px;
+        padding: 10px;
+      }
+      
+      .btn {
+        width: 100%;
+        margin: 10px 0;
+        font-size: 16px;
+      }
+      
+      video {
+        width: 100% !important;
+      }
+      
+      #preview img {
+        width: 90%;
+        max-width: 300px;
+      }
+      
+      h1 {
+        font-size: 22px;
+      }
+      
+      .container {
+        margin: 30px 10px;
+        padding: 20px;
+      }
+      
+      #generate-btn-container {
+        margin-top: 20px;
+      }
+    }
+      
+  </style>
+  
+</head>
+
+<div id="loadingOverlay">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+      <h3>Processing your face swap...</h3>
+    </div>
+</div>
+
+<body>
+  <div class="overlay" id="overlay">
+    <div class="onboarding">
+      <h2>Swap your Face using AI!</h2>
+      <form id="onboardForm" onsubmit="startApp(); return false;">
+        <input type="text" id="onboardName" placeholder="Enter your name" required>
+        <input type="email" id="onboardEmail" placeholder="Enter your email" required>
+        <select id="onboardGender" required>
+          <option value="">Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+        <button type="submit">Continue</button>
+      </form>
+    </div>
+  </div>
+  
+
+  <div class="container" id="mainContainer">
+    <h1 style="text-align:center; color:#444;">Face Swap Tool</h1>
+
+    <form id="face-swap-form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" id="name" name="name">
+      <input type="hidden" id="email" name="email">
+      <input type="hidden" id="gender" name="gender">
+
+      <div class="button-container">
+        <button class="btn" type="button" onclick="document.getElementById('imageInput').click()">Upload Image</button>
+        <button class="btn" type="button" onclick="openCamera()">Use Camera</button>
+        <input type="file" id="imageInput" name="image" accept="image/*" style="display:none" onchange="previewImage(event)">
+      </div>
+
+      <div id="preview" style="text-align:center; margin-top:20px;"></div>
+      <div id="camera" style="display:none; text-align:center;">
+        <video id="video" autoplay style="width: 480px; max-width: 90%; border-radius: 12px;"></video><br>
+        <button class="btn" type="button" onclick="captureImage()">Capture</button>
+      </div>
+
+      <canvas id="canvas" style="display:none;"></canvas>
+      <input type="file" id="selfieFile" name="selfie_file" style="display:none;">
+
+      <div class="target-images" id="imageSelector"></div>
+
+      <input type="hidden" id="target_image" name="target_image">
+      <div id="generate-btn-container">
+        <button class="btn" id="generateButton" type="submit" style="margin-top: 30px;" disabled>Generate</button>
+
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const targetImages = [
+      "https://i.ibb.co/LzC7SFjV/Drinks-coca-cola-posters-wallace-beery.jpg",
+        "https://i.ibb.co/N2Qzr2L5/myeracad.webp",
+        "https://i.ibb.co/5gKch6pZ/My-Cadbury-Era-4.jpg",
+        "https://i.ibb.co/cSC4tqZY/myera.jpg",
+        "https://i.ibb.co/Xk6rkJTw/myera-Cadbury-poster-1.jpg",
+        "https://i.ibb.co/gLMdMQjq/20240724-My-Cadbury-Era-3.webp",
+        "https://i.ibb.co/vx3f0qL3/coca-cola-delicieux-32720-coca-cola-vintage-poster-jpg-960x0-q85-subsampling-2-upscale.jpg",
+        "https://i.ibb.co/MkTN5R1P/myeracadburygirl.jpg",
+        "https://i.ibb.co/ZzgjrQcG/My-Cadbury-Era-2.jpg",
+        "https://i.ibb.co/Q7D4g0TF/myeracadbury.jpg"
+    ];
+
+    function startApp() {
+        const form = document.getElementById("onboardForm");
+        if (!form.checkValidity()) {
+          form.reportValidity(); // shows default browser validation messages
+          return;
+        }
+      
+        const name = document.getElementById("onboardName").value;
+        const email = document.getElementById("onboardEmail").value;
+        const gender = document.getElementById("onboardGender").value;
+      
+        // proceed with hiding the overlay, showing the main container, and setting hidden inputs
+        const overlay = document.getElementById("overlay");
+        const main = document.getElementById("mainContainer");
+
+        overlay.classList.add("fade-out");
+        main.classList.add("show");
+      
+        document.getElementById("name").value = name;
+        document.getElementById("email").value = email;
+        document.getElementById("gender").value = gender;
+      
+        const container = document.getElementById("imageSelector");
+        container.innerHTML = "";
+        const start = gender === 'Male' ? 0 : 5;
+        const end = gender === 'Male' ? 5 : 10;
+        for (let i = start; i < end; i++) {
+          const img = document.createElement("img");
+          img.src = targetImages[i];
+          img.onclick = () => selectTargetImage(img.src, img);
+          container.appendChild(img);
+        }
+    }
+      
+    let selectedImage = null;
+    function selectTargetImage(url, imgEl) {
+      if (selectedImage) selectedImage.classList.remove('selected');
+      imgEl.classList.add('selected');
+      selectedImage = imgEl;
+      document.getElementById("target_image").value = url;
+      updateGenerateButtonState();
+    }
+
+    function openCamera() {
+      const camera = document.getElementById('camera');
+      camera.style.display = 'block';
+      const video = document.getElementById('video');
+
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+        .then(stream => {
+          video.srcObject = stream;
+          video.play();
+        })
+        .catch(error => console.error('Camera error:', error));
+
+      video.style.transform = "scaleX(-1)";
+    }
+
+    function captureImage() {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const context = canvas.getContext('2d');
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.translate(canvas.width, 0);
+      context.scale(-1, 1);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(blob => {
+        const file = new File([blob], 'selfie.png', { type: 'image/png' });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        document.getElementById('selfieFile').files = dataTransfer.files;
+
+        const previewUrl = URL.createObjectURL(blob);
+        document.getElementById('preview').innerHTML = `<img src="${previewUrl}" alt="Captured Image" style="max-width:300px;border-radius:10px;">`;
+
+        const stream = video.srcObject;
+        stream.getTracks().forEach(track => track.stop());
+        document.getElementById('camera').style.display = 'none';
+      }, 'image/png');
+    }
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('preview').innerHTML = `<img src="${e.target.result}" alt="Image Preview" style="max-width:300px;border-radius:10px;">`;
+        }
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function updateGenerateButtonState() {
+        const hasTargetImage = document.getElementById('target_image').value.trim() !== '';
+        const hasUploadedImage = document.getElementById('imageInput').files.length > 0;
+        const hasSelfieImage = document.getElementById('selfieFile').files.length > 0;
+      
+        const generateBtn = document.getElementById('generateButton');
+        generateBtn.disabled = !(hasTargetImage && (hasUploadedImage || hasSelfieImage));
+    }
+      
+      // Attach listeners
+    document.getElementById('imageInput').addEventListener('change', updateGenerateButtonState);
+    document.getElementById('selfieFile').addEventListener('change', updateGenerateButtonState);
+    
+    document.getElementById("face-swap-form").addEventListener("submit", function () {
+        document.getElementById("loadingOverlay").classList.add("show");
+    });
+
+  </script>
+</body>
+</html>
